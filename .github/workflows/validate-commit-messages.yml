@@ -1,0 +1,37 @@
+name: Enforce Squashed Commit Message Structure
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  commit-message-enforcement:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Extract squashed commit message
+        id: extract-message
+        run: |
+          # Retrieve the merge commit SHA
+          MERGE_COMMIT_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          # Fetch the merge commit message
+          MERGE_COMMIT_MSG=$(git log --format=%B -n 1 $MERGE_COMMIT_SHA)
+
+          squashed_message=$(git log --pretty=format:%s -n 1 $MERGE_COMMIT_SHA)
+          echo "::set-output name=message::$squashed_message"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Validate squashed commit message
+        run: npx commitlint --from=HEAD~1 --message="${{ steps.extract-message.outputs.message }}"
