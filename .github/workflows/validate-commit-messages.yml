@@ -34,4 +34,4 @@ jobs:
         run: npm install
 
       - name: Validate squashed commit message
-        run: echo ${{ steps.extract-message.outputs.message }} | npx commitlint 
+        run: npx commitlint --from=HEAD~1 --message="${{ steps.extract-message.outputs.message }}"
