@@ -17,7 +17,6 @@ jobs:
           # Retrieve the merge commit SHA
           MERGE_COMMIT_SHA="${{ github.event.pull_request.merge_commit_sha }}"
           # Fetch the merge commit message
-          MERGE_COMMIT_MSG=$(git log --format=%B -n 1 $MERGE_COMMIT_SHA)
           squashed_message=$(git log --pretty=format:%s -n 1 $MERGE_COMMIT_SHA)
           echo "::set-output name=message::$squashed_message"
 
