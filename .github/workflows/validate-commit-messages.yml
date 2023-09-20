@@ -1,19 +1,9 @@
-name: Enforce Squashed Commit Message Structure
-
-on:
-  pull_request:
-    types:
-      - closed
+name: Extract squashed commit message
 
 jobs:
-  commit-message-enforcement:
-    if: github.event.pull_request.merged == true
+  validate_commit_message:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-
       - name: Extract squashed commit message
         id: extract-message
         run: |
@@ -21,7 +11,6 @@ jobs:
           MERGE_COMMIT_SHA="${{ github.event.pull_request.merge_commit_sha }}"
           # Fetch the merge commit message
           MERGE_COMMIT_MSG=$(git log --format=%B -n 1 $MERGE_COMMIT_SHA)
-
           squashed_message=$(git log --pretty=format:%s -n 1 $MERGE_COMMIT_SHA)
           echo "::set-output name=message::$squashed_message"
 
@@ -39,8 +28,7 @@ jobs:
       - name: Validate squashed commit message
         uses: actions/github-script@v5
         id: validate-commit-message
-        if: !echo ${{ steps.extract-message.outputs.message }}' | npx commitlint
-
+        if: "! echo ${{ steps.extract-message.outputs.message }}" | npx commitlint
         with:
           script: |
             echo "Commit message does not adhere to the convention."
@@ -50,5 +38,7 @@ jobs:
             AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
             REVERT_COMMIT_SHA=$(git log --format=%H -n 2 | tail -1)
             # Revert the merge commit
-            await execSync(`curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"`)
-            # Reopen the pull reque
+            await execSync('curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"')
+            # Reopen the pull request
+            curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/reopen"
+            echo "Reverted the merge commit and reopened the pull request."
