@@ -28,7 +28,7 @@ jobs:
       - name: Validate squashed commit message
         uses: actions/github-script@v5
         id: validate-commit-message
-        if: "! echo ${{ steps.extract-message.outputs.message }}" | npx commitlint
+        if: !echo ${{ steps.extract-message.outputs.message }} | npx commitlint
         with:
           script: |
             echo "Commit message does not adhere to the convention."
