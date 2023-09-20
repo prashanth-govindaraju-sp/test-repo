@@ -1,7 +1,13 @@
 name: Extract squashed commit message
 
+on:
+  pull_request:
+    types:
+      - closed
+
 jobs:
   validate_commit_message:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - name: Extract squashed commit message
