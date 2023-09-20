@@ -33,5 +33,22 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install jq
+
       - name: Validate squashed commit message
-        run: echo ${{ steps.extract-message.outputs.message }} | npx commitlint 
+        run: |
+          if !echo '${{ steps.extract-message.outputs.message }}' | npx commitlint 
+            echo "Commit message does not adhere to the convention."
+            # Revert the merge commit using the GitHub API
+            PR_NUMBER=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)
+            REPO_API_URL=$(jq -r '.repository.url' $GITHUB_EVENT_PATH)
+            AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
+            REVERT_COMMIT_SHA=$(git log --format=%H -n 2 | tail -1)
+            # Revert the merge commit
+            curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"
+            # Reopen the pull request
+            curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/reopen"
+            echo "Reverted the merge commit and reopened the pull request."
+          fi
+
