@@ -32,13 +32,6 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Print versions
-        run: |
-          git --version
-          node --version
-          npm --version
-          npx commitlint --version
-
       - name: Install commitlint
         run: |
           npm init -y
@@ -53,14 +46,14 @@ jobs:
           if ! echo '${{ steps.extract-message.outputs.message }}' | npx commitlint; then
             echo "Commit message does not adhere to the convention."
             # Revert the merge commit using the GitHub API
-            PR_NUMBER=$(jq -r '.pull_request.number' < $GITHUB_EVENT_PATH)
-            REPO_API_URL=$(jq -r '.repository.url' < $GITHUB_EVENT_PATH)
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            REPO_API_URL="${{ github.event.repository.url }}"
             AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
             REVERT_COMMIT_SHA=$(git log --format=%H -n 2 | tail -1)
-            echo '${PR_NUMBER}'
-            echo '${REPO_API_URL}'
-            echo '${AUTH_HEADER}'
-            echo '${REVERT_COMMIT_SHA}'
+            echo $PR_NUMBER
+            echo $REPO_API_URL
+            echo $AUTH_HEADER
+            echo $REVERT_COMMIT_SHA
             # Revert the merge commit
             curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"
             # Reopen the pull request
