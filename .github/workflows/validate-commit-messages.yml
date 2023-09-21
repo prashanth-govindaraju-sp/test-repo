@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
 
       - name: Extract squashed commit message
         id: extract-message
@@ -42,8 +42,7 @@ jobs:
       - name: Install commitlint
         run: |
           npm init -y
-          npm install commitlint@latest
-          npm install @commitlint/config-conventional @commitlint/cli
+          npm install -g @commitlint/config-conventional @commitlint/cli
 
       - name: Install jq
         run: sudo apt-get update && sudo apt-get install jq
@@ -58,10 +57,10 @@ jobs:
             REPO_API_URL=$(jq -r '.repository.url' < $GITHUB_EVENT_PATH)
             AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
             REVERT_COMMIT_SHA=$(git log --format=%H -n 2 | tail -1)
-            echo '${{PR_NUMBER}}'
-            echo '${{REPO_API_URL}}'
-            echo '${{AUTH_HEADER}}'
-            echo '${{REVERT_COMMIT_SHA}}'
+            echo '${PR_NUMBER}'
+            echo '${REPO_API_URL}'
+            echo '${AUTH_HEADER}'
+            echo '${REVERT_COMMIT_SHA}'
             # Revert the merge commit
             curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"
             # Reopen the pull request
