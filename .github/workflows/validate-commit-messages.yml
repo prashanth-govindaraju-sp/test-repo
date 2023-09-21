@@ -23,19 +23,21 @@ jobs:
           squashed_message=$(git log --pretty=format:%s -n 1 $MERGE_COMMIT_SHA)
           echo "::set-output name=message::$squashed_message"
 
-      - name: Install required dependencies
-        run: |
-          apt update
-          apt install -y sudo
-          sudo apt install -y git curl
-          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
+       - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
       - name: Print versions
         run: |
           git --version
           node --version
           npm --version
           npx commitlint --version
+
       - name: Install commitlint
         run: |
           npm install conventional-changelog-conventionalcommits
