@@ -50,7 +50,7 @@ jobs:
       - name: Validate squashed commit message
         id: validate-message
         run: |
-          if ! echo ${{ steps.extract-message.outputs.message }} | npx commitlint; then
+          if ! echo '${{ steps.extract-message.outputs.message }}' | npx commitlint; then
             echo "Commit message does not adhere to the convention."
             # Revert the merge commit using the GitHub API
             PR_NUMBER=$(jq -r '.pull_request.number' $GITHUB_EVENT_PATH)
