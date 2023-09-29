@@ -1,0 +1,62 @@
+name: Extract squashed commit message
+
+on:
+  pull_request:
+    types:
+      - closed
+
+jobs:
+  validate_commit_message:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Extract squashed commit message
+        id: extract-message
+        run: |
+          # Retrieve the merge commit SHA
+          MERGE_COMMIT_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          # Fetch the merge commit message
+          squashed_message=$(git log --pretty=format:%s -n 1 $MERGE_COMMIT_SHA)
+          echo "::set-output name=message::$squashed_message"
+
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Install commitlint
+        run: |
+          npm init -y
+          npm install -g @commitlint/config-conventional @commitlint/cli
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install jq
+
+      - name: Validate squashed commit message
+        id: validate-message
+        run: |
+          if ! echo '${{ steps.extract-message.outputs.message }}' | npx commitlint; then
+            echo "Commit message does not adhere to the convention."
+            # Revert the merge commit using the GitHub API
+            PR_NUMBER="${{ github.event.pull_request.number }}"
+            REPO_API_URL="${{ github.event.repository.url }}"
+            AUTH_HEADER="Authorization: token ${{ secrets.GITHUB_TOKEN }}"
+            REVERT_COMMIT_SHA=$(git log --format=%H -n 2 | tail -1)
+            echo $PR_NUMBER
+            echo $REPO_API_URL
+            echo $AUTH_HEADER
+            echo $REVERT_COMMIT_SHA
+            # Revert the merge commit
+            curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/revert" -d "{\"sha\":\"$REVERT_COMMIT_SHA\"}"
+            # Reopen the pull request
+            curl -X POST -H "$AUTH_HEADER" "$REPO_API_URL/pulls/$PR_NUMBER/reopen"
+            echo "Reverted the merge commit and reopened the pull request."
+          fi
