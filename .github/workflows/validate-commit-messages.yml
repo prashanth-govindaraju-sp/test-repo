@@ -3,7 +3,11 @@ name: Extract squashed commit message
 on:
   pull_request:
     types:
+<<<<<<< Updated upstream
       - closed
+=======
+      - [opened, synchronize]
+>>>>>>> Stashed changes
 
 jobs:
   validate_commit_message:
